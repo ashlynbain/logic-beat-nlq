@@ -1,0 +1,698 @@
+:root {
+  --sky-top: #9cd4ff;
+  --sky-mid: #b8e4ff;
+  --sky-bottom: #d4f0ff;
+  --grass: #6bc96b;
+  --grass-dark: #4a9e4a;
+  --dirt: #8b5e3c;
+  --wood: #5c4033;
+  --wood-light: #8b6914;
+  --cream: #fff8e7;
+  --cream-dark: #f5e6c8;
+  --pink: #ff8fab;
+  --pink-dark: #e85a7a;
+  --lavender: #c9a0ff;
+  --yellow: #ffe066;
+  --text: #3d2914;
+  --text-muted: #6b5344;
+  --hp-green: #5cd65c;
+  --mp-blue: #6eb5ff;
+  --error: #e84a5f;
+  --pixel: 4px;
+  font-family: "VT323", monospace;
+  font-size: 20px;
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 45%, var(--sky-bottom) 70%);
+  overflow-x: hidden;
+}
+
+/* ── Pixel UI primitives ── */
+.pixel-box {
+  background: var(--cream);
+  border: var(--pixel) solid var(--wood);
+  box-shadow:
+    var(--pixel) var(--pixel) 0 0 var(--wood),
+    inset calc(var(--pixel) * 2) calc(var(--pixel) * 2) 0 0 rgba(255, 255, 255, 0.55),
+    inset calc(var(--pixel) * -1) calc(var(--pixel) * -1) 0 0 rgba(0, 0, 0, 0.06);
+}
+
+.pixel-inset {
+  background: var(--cream-dark);
+  border: var(--pixel) solid var(--wood);
+  box-shadow: inset 3px 3px 0 0 rgba(0, 0, 0, 0.12);
+}
+
+.pixel-sprite {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  flex-shrink: 0;
+}
+
+/* ── Meadow background scene ── */
+.game-wrap {
+  position: relative;
+  min-height: 100vh;
+}
+
+.meadow-scene {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.cloud {
+  position: absolute;
+  background: #fff;
+  border: 3px solid var(--wood);
+  box-shadow: 4px 4px 0 rgba(92, 64, 51, 0.2);
+  opacity: 0.92;
+}
+
+.cloud-a {
+  width: 64px;
+  height: 24px;
+  top: 8%;
+  left: 10%;
+  border-radius: 0;
+  box-shadow:
+    16px -12px 0 -3px #fff,
+    32px -8px 0 -3px #fff,
+    48px 0 0 -3px #fff,
+    4px 4px 0 0 var(--wood);
+  animation: cloud-drift 28s linear infinite;
+}
+
+.cloud-b {
+  width: 48px;
+  height: 20px;
+  top: 14%;
+  right: 15%;
+  box-shadow:
+    12px -10px 0 -3px #fff,
+    28px -4px 0 -3px #fff,
+    4px 4px 0 0 var(--wood);
+  animation: cloud-drift 36s linear infinite reverse;
+}
+
+@keyframes cloud-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(40px);
+  }
+}
+
+.grass-strip {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      var(--grass) 0,
+      var(--grass) 8px,
+      var(--grass-dark) 8px,
+      var(--grass-dark) 16px
+    );
+  border-top: var(--pixel) solid var(--wood);
+  box-shadow: inset 0 8px 0 0 rgba(255, 255, 255, 0.2);
+}
+
+.grass-strip::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent 6px,
+    var(--grass) 6px,
+    var(--grass) 12px
+  );
+}
+
+.deco-flower {
+  position: absolute;
+  bottom: 24px;
+  width: 32px;
+  height: 32px;
+  animation: flower-sway 3s ease-in-out infinite;
+}
+
+.f1 {
+  left: 4%;
+  animation-delay: 0s;
+}
+.f2 {
+  left: 18%;
+  bottom: 40px;
+  animation-delay: 0.4s;
+}
+.f3 {
+  right: 12%;
+  animation-delay: 0.8s;
+}
+.f4 {
+  right: 4%;
+  bottom: 52px;
+  animation-delay: 1.2s;
+}
+.f5 {
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 16px;
+  animation-delay: 0.6s;
+}
+
+.deco-heart {
+  position: absolute;
+  animation: float-y 2.5s ease-in-out infinite;
+}
+
+.h1 {
+  top: 22%;
+  left: 6%;
+}
+.h2 {
+  top: 30%;
+  right: 8%;
+  animation-delay: 1s;
+}
+
+.deco-star {
+  position: absolute;
+  animation: twinkle 1.8s step-end infinite;
+}
+
+.s1 {
+  top: 12%;
+  right: 22%;
+}
+.s2 {
+  top: 20%;
+  left: 22%;
+  animation-delay: 0.9s;
+}
+
+@keyframes flower-sway {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ── Layout ── */
+.page {
+  position: relative;
+  z-index: 1;
+  width: min(960px, 94vw);
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 6rem;
+}
+
+.hero {
+  text-align: center;
+  padding: 1.5rem 1.5rem 1.25rem;
+  margin-bottom: 1.5rem;
+  max-width: 720px;
+  margin-inline: auto;
+}
+
+.panel {
+  width: 100%;
+  padding: 2rem 2.25rem 2.5rem;
+  font-size: 1.25rem;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--lavender);
+  border: 3px solid var(--wood);
+  padding: 0.35rem 0.75rem;
+  margin-bottom: 1rem;
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.45rem;
+  line-height: 1.6;
+  color: var(--wood);
+  box-shadow: 3px 3px 0 var(--wood);
+}
+
+.hero h1 {
+  margin: 0 0 0.75rem;
+  line-height: 1.4;
+}
+
+.title-line {
+  display: block;
+  font-family: "Press Start 2P", cursive;
+  font-size: clamp(0.85rem, 3.5vw, 1.1rem);
+  color: var(--pink-dark);
+  text-shadow: 2px 2px 0 var(--yellow);
+}
+
+.title-sub {
+  display: block;
+  font-family: "Press Start 2P", cursive;
+  font-size: clamp(0.55rem, 2.5vw, 0.7rem);
+  color: var(--wood-light);
+  margin-top: 0.5rem;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+  max-width: 28em;
+  margin-inline: auto;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.label {
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.55rem;
+  color: var(--wood);
+  line-height: 1.8;
+}
+
+.chip-label {
+  margin: 1rem 0 0.5rem;
+  font-size: 1rem;
+  color: var(--pink-dark);
+}
+
+textarea,
+select {
+  width: 100%;
+  font-family: "VT323", monospace;
+  font-size: 1.35rem;
+  color: var(--text);
+  background: #fff;
+  border: 3px solid var(--wood);
+  padding: 0.85rem 1rem;
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.08);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.4;
+}
+
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--pink);
+  box-shadow:
+    inset 2px 2px 0 rgba(0, 0, 0, 0.08),
+    0 0 0 2px var(--yellow);
+}
+
+.chips {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chip {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  text-align: left;
+  background: var(--cream-dark);
+  border: 3px solid var(--wood);
+  padding: 0.65rem 0.85rem;
+  font-family: "VT323", monospace;
+  font-size: 1.2rem;
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--wood);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.chip:hover {
+  background: #fff0f5;
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--wood);
+}
+
+.chip:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+.chip-num {
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.45rem;
+  color: var(--pink-dark);
+  min-width: 1.2rem;
+  padding-top: 0.15rem;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field > span {
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.45rem;
+  color: var(--wood);
+}
+
+.field select {
+  width: auto;
+  min-width: 5rem;
+}
+
+.checkbox {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem !important;
+}
+
+.checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--pink);
+  image-rendering: pixelated;
+}
+
+.primary {
+  margin-left: auto;
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.55rem;
+  line-height: 1.6;
+  padding: 0.85rem 1.25rem;
+  background: var(--hp-green);
+  color: var(--wood);
+  border: 4px solid var(--wood);
+  cursor: pointer;
+  box-shadow:
+    4px 4px 0 var(--wood),
+    inset -2px -4px 0 rgba(0, 0, 0, 0.15),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.primary:hover:not(:disabled) {
+  background: #6ee86e;
+  transform: translate(-1px, -1px);
+  box-shadow:
+    5px 5px 0 var(--wood),
+    inset -2px -4px 0 rgba(0, 0, 0, 0.15),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.4);
+}
+
+.primary:active:not(:disabled) {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0 var(--wood);
+}
+
+.primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.blink {
+  animation: blink 0.6s step-end infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.alert {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.alert.error {
+  background: #ffe0e6;
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.alert-icon {
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.6rem;
+  background: var(--error);
+  color: white;
+  padding: 0.2rem 0.35rem;
+  border: 2px solid var(--wood);
+}
+
+.result {
+  margin-top: 1.25rem;
+  padding: 1rem;
+}
+
+.result h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.6rem;
+  line-height: 1.7;
+  color: var(--pink-dark);
+}
+
+.adjustments {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.75rem;
+  background: #fff0f8;
+  border: 2px dashed var(--pink);
+}
+
+.adjustments-title {
+  margin: 0 0 0.35rem;
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.42rem;
+  line-height: 1.8;
+  color: var(--pink-dark);
+}
+
+.adjustments ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.adjustments li {
+  margin-bottom: 0.25rem;
+}
+
+.logic-msg {
+  color: var(--grass-dark);
+  font-size: 1.1rem;
+  margin: 0 0 1rem;
+}
+
+.spec-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.spec {
+  padding: 0.6rem 0.65rem;
+  position: relative;
+}
+
+.spec.wide {
+  grid-column: 1 / -1;
+}
+
+.spec-icon {
+  font-size: 1rem;
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.spec-label {
+  display: block;
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.4rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.spec strong {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 400;
+  word-break: break-word;
+}
+
+.downloads h3 {
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.45rem;
+  color: var(--wood);
+  margin: 0 0 0.65rem;
+  line-height: 1.8;
+}
+
+.downloads ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.loot-link {
+  display: inline-block;
+  padding: 0.35rem 0.65rem;
+  background: var(--mp-blue);
+  border: 3px solid var(--wood);
+  color: var(--wood);
+  text-decoration: none;
+  font-size: 1.05rem;
+  box-shadow: 3px 3px 0 var(--wood);
+  transition: transform 0.08s;
+}
+
+.loot-link:hover {
+  background: #8ec8ff;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--wood);
+}
+
+.loot-link.special {
+  background: var(--yellow);
+}
+
+.hint {
+  margin-top: 1rem;
+  padding: 0.65rem;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px dashed var(--wood-light);
+  font-size: 1rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.game-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+/* Subtle CRT scanlines overlay */
+.game-wrap::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  opacity: 0.4;
+}
+
+@media (max-width: 768px) {
+  .page {
+    width: 100%;
+    padding: 1.5rem 1rem 5rem;
+  }
+
+  .panel {
+    padding: 1.5rem 1.25rem 1.75rem;
+  }
+
+  .spec-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .primary {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+
+  .spec-grid {
+    grid-template-columns: 1fr;
+  }
+}

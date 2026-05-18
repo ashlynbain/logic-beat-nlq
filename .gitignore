@@ -1,0 +1,14 @@
+output/
+backend/.venv/
+frontend/node_modules/
+frontend/dist/
+__pycache__/
+*.pyc
+.env
+.env.local
+*.pem
+*.key
+.DS_Store
+.cursor/
+agent-tools/
+agent-transcripts/
