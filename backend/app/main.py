@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .beat_engine import generate_beat
 from .logic_bridge import open_in_logic
+from .lucky import roll_lucky_bars, roll_lucky_quest
 from .models import BeatRequest, BeatResponse
 from .parser import parse_prompt_with_llm
 from .prompt_normalize import normalize_prompt
@@ -36,17 +37,31 @@ def health():
 
 @app.post("/api/generate", response_model=BeatResponse)
 def generate(request: BeatRequest):
-    spec, adjustments = normalize_prompt(request.prompt, request.bars)
-    spec.bars = request.bars
+    prompt = request.prompt.strip()
+    bars = request.bars
 
-    llm_spec = parse_prompt_with_llm(request.prompt, request.bars)
-    if llm_spec:
-        spec = llm_spec
-        spec.bars = request.bars
-    if spec.variation == 0:
-        import zlib
+    if request.lucky:
+        prompt, lucky_variation = roll_lucky_quest()
+        bars = roll_lucky_bars()
+        spec, adjustments = normalize_prompt(prompt, bars)
+        spec.bars = bars
+        spec.variation = lucky_variation
+        adjustments.insert(
+            0,
+            f"Lucky roll — {spec.genre} at {spec.bpm} BPM, {spec.key} {spec.scale}, {spec.mood} mood ({bars} bars).",
+        )
+    else:
+        spec, adjustments = normalize_prompt(prompt, bars)
+        spec.bars = bars
 
-        spec.variation = zlib.adler32(request.prompt.strip().lower().encode()) & 0xFFFFFFFF
+        llm_spec = parse_prompt_with_llm(prompt, bars)
+        if llm_spec:
+            spec = llm_spec
+            spec.bars = bars
+        if spec.variation == 0:
+            import zlib
+
+            spec.variation = zlib.adler32(prompt.lower().encode()) & 0xFFFFFFFF
 
     session_id = uuid.uuid4().hex[:12]
     session_dir = OUTPUT_ROOT / session_id
@@ -66,7 +81,7 @@ def generate(request: BeatRequest):
         track_paths={k: str(v.relative_to(PROJECT_ROOT)) for k, v in track_paths.items()},
         message=logic_message or "Beat generated. Open LOGIC_SETUP.txt in the output folder for instrument mapping.",
         adjustments=adjustments,
-        original_prompt=request.prompt,
+        original_prompt=prompt,
     )
 
 

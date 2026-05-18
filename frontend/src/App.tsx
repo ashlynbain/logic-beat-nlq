@@ -16,7 +16,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BeatResponse | null>(null);
 
-  async function generate() {
+  async function generate(lucky = false) {
     setLoading(true);
     setError(null);
     setResult(null);
@@ -25,15 +25,34 @@ export default function App() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, bars, open_in_logic: openInLogic }),
+        body: JSON.stringify({
+          prompt: lucky ? "" : prompt,
+          bars,
+          open_in_logic: openInLogic,
+          lucky,
+        }),
       });
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.detail || `Request failed (${res.status})`);
+        const detail = body.detail;
+        const message =
+          typeof detail === "string"
+            ? detail
+            : Array.isArray(detail)
+              ? detail.map((d: { msg?: string }) => d.msg).join(", ")
+              : `Request failed (${res.status})`;
+        throw new Error(message);
       }
 
-      setResult(await res.json());
+      const data: BeatResponse = await res.json();
+      if (data.original_prompt) {
+        setPrompt(data.original_prompt);
+      }
+      if (data.spec.bars) {
+        setBars(data.spec.bars);
+      }
+      setResult(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -106,15 +125,31 @@ export default function App() {
               />
               <span>Open in Logic Pro</span>
             </label>
-            <button className="primary" onClick={generate} disabled={loading || !prompt.trim()}>
-              {loading ? (
-                <>
-                  <span className="blink">▶</span> Crafting…
-                </>
-              ) : (
-                <>▶ Start quest</>
-              )}
-            </button>
+            <div className="action-buttons">
+              <button
+                type="button"
+                className="lucky"
+                onClick={() => generate(true)}
+                disabled={loading}
+                title="Random genre, BPM, key, and mood"
+              >
+                {loading ? "…" : "🎲 I'm feeling lucky"}
+              </button>
+              <button
+                type="button"
+                className="primary"
+                onClick={() => generate(false)}
+                disabled={loading || !prompt.trim()}
+              >
+                {loading ? (
+                  <>
+                    <span className="blink">▶</span> Crafting…
+                  </>
+                ) : (
+                  <>▶ Start quest</>
+                )}
+              </button>
+            </div>
           </div>
 
           {error && (
