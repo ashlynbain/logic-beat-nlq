@@ -1,10 +1,17 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class BeatRequest(BaseModel):
-    prompt: str = Field(..., min_length=3, description="Natural language beat description")
+    prompt: str = Field(default="", description="Natural language beat description")
     bars: int = Field(default=8, ge=4, le=32)
     open_in_logic: bool = Field(default=True)
+    lucky: bool = Field(default=False, description="Roll a random genre, BPM, and mood")
+
+    @model_validator(mode="after")
+    def require_prompt_unless_lucky(self) -> "BeatRequest":
+        if not self.lucky and len(self.prompt.strip()) < 3:
+            raise ValueError("prompt must be at least 3 characters")
+        return self
 
 
 class BeatSpec(BaseModel):

@@ -438,8 +438,50 @@ select:focus {
   image-rendering: pixelated;
 }
 
-.primary {
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.65rem;
   margin-left: auto;
+}
+
+.lucky {
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.48rem;
+  line-height: 1.6;
+  padding: 0.85rem 1rem;
+  background: var(--yellow);
+  color: var(--wood);
+  border: 4px solid var(--wood);
+  cursor: pointer;
+  box-shadow:
+    4px 4px 0 var(--wood),
+    inset -2px -4px 0 rgba(0, 0, 0, 0.12),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.45);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.lucky:hover:not(:disabled) {
+  background: #fff4a8;
+  transform: translate(-1px, -1px);
+  box-shadow:
+    5px 5px 0 var(--wood),
+    inset -2px -4px 0 rgba(0, 0, 0, 0.12),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.45);
+}
+
+.lucky:active:not(:disabled) {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0 var(--wood);
+}
+
+.lucky:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.primary {
   font-family: "Press Start 2P", cursive;
   font-size: 0.55rem;
   line-height: 1.6;
