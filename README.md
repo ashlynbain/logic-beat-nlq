@@ -4,6 +4,10 @@ Describe a beat in plain English → get a **~2 minute**, loop-ready **MIDI** fi
 
 Example: *Make me a beat for a great R&B song at 90 bpm*
 
+## Try it live
+
+See how it works: **[bloombeats.ashlynbain.com](https://bloombeats.ashlynbain.com/)**
+
 ## Features
 
 - Rule-based parsing (no API keys required)
