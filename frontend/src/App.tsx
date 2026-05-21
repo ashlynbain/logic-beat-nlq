@@ -143,11 +143,11 @@ export default function App() {
               <span className="alert-icon">!</span>
               <span>
                 Cannot reach the beat API ({apiUrl("/api/health")}). {apiConfigHint()}
-                {hostedMode && !getApiBase() && (
+                {window.location.hostname === "bloombeats.ashlynbain.com" && (
                   <>
                     {" "}
-                    On your server, edit <strong>config.json</strong> and set{" "}
-                    <strong>apiBaseUrl</strong> to your running Python API.
+                    Deploy the API at <strong>https://api.bloombeats.ashlynbain.com</strong>{" "}
+                    (see README on GitHub).
                   </>
                 )}
               </span>

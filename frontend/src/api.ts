@@ -22,6 +22,9 @@ export function isHostedMode(): boolean {
   return isRemoteApi();
 }
 
+const PRODUCTION_SITE = "bloombeats.ashlynbain.com";
+const PRODUCTION_API = "https://api.bloombeats.ashlynbain.com";
+
 export async function loadRuntimeConfig(): Promise<void> {
   try {
     const base = import.meta.env.BASE_URL || "/";
@@ -33,6 +36,14 @@ export async function loadRuntimeConfig(): Promise<void> {
     }
   } catch {
     /* same-origin / local dev */
+  }
+
+  if (
+    !apiBase &&
+    typeof window !== "undefined" &&
+    window.location.hostname === PRODUCTION_SITE
+  ) {
+    apiBase = PRODUCTION_API;
   }
 }
 

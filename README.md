@@ -33,28 +33,37 @@ cd ../frontend && npm install && npm run dev
 
 Open **http://127.0.0.1:5173** or run `./scripts/dev.sh` from the project root.
 
-## Static site + API
+## Production: bloombeats.ashlynbain.com
+
+| URL | Role |
+|-----|------|
+| **https://bloombeats.ashlynbain.com** | Static UI (`public_html`) |
+| **https://api.bloombeats.ashlynbain.com** | Python API (FastAPI) |
+
+The UI defaults to the API subdomain when hosted on `bloombeats.ashlynbain.com`. You can override with `config.json`:
+
+```json
+{ "apiBaseUrl": "https://api.bloombeats.ashlynbain.com" }
+```
+
+**1. UI (cPanel `public_html`)** — build and upload:
 
 ```bash
 ./scripts/build-public-html.sh
+# upload deploy/public_html/* to bloombeats.ashlynbain.com
 ```
 
-Upload `deploy/public_html/` to your web host. **Required:** edit `config.json` on the server (see `config.example.json`):
-
-```json
-{ "apiBaseUrl": "https://your-api-server.com" }
-```
-
-Without `apiBaseUrl`, the static site returns **404** on `/api/generate` — the Python API must run elsewhere.
-
-On the API server:
+**2. API** — run on a host that supports Python (VPS, Railway, Render, or a `api.` subdomain with Python):
 
 ```bash
-export ALLOWED_ORIGINS=https://bloombeats.ashlynbain.com,https://yourdomain.com
+cd backend && source .venv/bin/activate && pip install -r requirements.txt
+export ALLOWED_ORIGINS=https://bloombeats.ashlynbain.com
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Hosted builds auto-download `beat_combined.mid`. Run the backend on a VPS or your Mac with Python 3.10+.
+Point **api.bloombeats.ashlynbain.com** at that server (DNS A record or reverse proxy). Test: `https://api.bloombeats.ashlynbain.com/api/health` should return `{"status":"ok"}`.
+
+Until the API subdomain is live, the site will show an offline warning (not a silent 404).
 
 ## Using the MIDI
 
