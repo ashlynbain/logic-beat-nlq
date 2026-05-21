@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { apiUrl, isHostedMode, loadRuntimeConfig } from "./api";
+import { downloadMidiFile } from "./download";
+import { ApiKeysPanel, buildClientKeysPayload, type ApiKeysState } from "./components/ApiKeysPanel";
 import { MeadowScene, PixelFlower, PixelHeart } from "./components/PixelDecor";
 import type { BeatResponse } from "./types";
 
@@ -10,11 +13,26 @@ const EXAMPLES = [
 
 export default function App() {
   const [prompt, setPrompt] = useState(EXAMPLES[0]);
-  const [bars, setBars] = useState(8);
   const [openInLogic, setOpenInLogic] = useState(true);
+  const [hostedMode, setHostedMode] = useState(false);
+  const [apiKeys, setApiKeys] = useState<ApiKeysState>({
+    llmProvider: "",
+    llmApiKey: "",
+    llmModel: "",
+    tavilyApiKey: "",
+    useLlm: false,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BeatResponse | null>(null);
+
+  useEffect(() => {
+    loadRuntimeConfig().then(() => {
+      const hosted = isHostedMode();
+      setHostedMode(hosted);
+      if (hosted) setOpenInLogic(false);
+    });
+  }, []);
 
   async function generate(lucky = false) {
     setLoading(true);
@@ -22,14 +40,16 @@ export default function App() {
     setResult(null);
 
     try {
-      const res = await fetch("/api/generate", {
+      const res = await fetch(apiUrl("/api/generate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: lucky ? "" : prompt,
-          bars,
-          open_in_logic: openInLogic,
+          bars: 8,
+          open_in_logic: !hostedMode && openInLogic,
           lucky,
+          use_web_search: !lucky && Boolean(apiKeys.tavilyApiKey.trim()),
+          ...buildClientKeysPayload(apiKeys),
         }),
       });
 
@@ -49,10 +69,19 @@ export default function App() {
       if (data.original_prompt) {
         setPrompt(data.original_prompt);
       }
-      if (data.spec.bars) {
-        setBars(data.spec.bars);
-      }
       setResult(data);
+
+      if (hostedMode && data.midi_path) {
+        try {
+          await downloadMidiFile(data.midi_path, "beat_combined.mid");
+        } catch (dlErr) {
+          setError(
+            dlErr instanceof Error
+              ? `${dlErr.message} — use Download again below.`
+              : "Auto-download failed — use Download again below.",
+          );
+        }
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -76,8 +105,9 @@ export default function App() {
             <span className="title-sub">Logic Quest</span>
           </h1>
           <p className="subtitle">
-            Tell the meadow fairy what vibe you want — she&apos;ll craft MIDI tracks for your
-            Logic Pro adventure ✿
+            {hostedMode
+              ? "Describe your beat — we\u2019ll send a MIDI file you can open in Logic, GarageBand, FL Studio, or any DAW ✿"
+              : "Tell the meadow fairy what vibe you want — she\u2019ll craft MIDI tracks for your Logic Pro adventure ✿"}
           </p>
         </header>
 
@@ -96,6 +126,8 @@ export default function App() {
             placeholder="e.g. cozy R&B at 120 BPM, synth + bass + snare for singing..."
           />
 
+          <ApiKeysPanel keys={apiKeys} onChange={setApiKeys} />
+
           <p className="chip-label">✦ Quick spells</p>
           <div className="chips">
             {EXAMPLES.map((ex, i) => (
@@ -107,24 +139,16 @@ export default function App() {
           </div>
 
           <div className="controls">
-            <label className="field">
-              <span>Bars</span>
-              <select value={bars} onChange={(e) => setBars(Number(e.target.value))}>
-                {[4, 8, 16].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="checkbox field">
-              <input
-                type="checkbox"
-                checked={openInLogic}
-                onChange={(e) => setOpenInLogic(e.target.checked)}
-              />
-              <span>Open in Logic Pro</span>
-            </label>
+            {!hostedMode && (
+              <label className="checkbox field">
+                <input
+                  type="checkbox"
+                  checked={openInLogic}
+                  onChange={(e) => setOpenInLogic(e.target.checked)}
+                />
+                <span>Open in Logic Pro</span>
+              </label>
+            )}
             <div className="action-buttons">
               <button
                 type="button"
@@ -174,38 +198,58 @@ export default function App() {
                   </ul>
                 </div>
               )}
-              <p className="logic-msg">{result.message}</p>
+              {hostedMode ? (
+                <p className="logic-msg download-msg">
+                  Your ~{formatLoopLength(result.spec.bpm, result.spec.bars)} beat should download as{" "}
+                  <strong>beat_combined.mid</strong> (all instruments). Open in any DAW at{" "}
+                  <strong>{result.spec.bpm} BPM</strong>, loop bars 1–{result.spec.bars}, then add vocals.
+                </p>
+              ) : (
+                <p className="logic-msg">{result.message}</p>
+              )}
 
               <div className="spec-grid">
                 <Spec label="Genre" value={result.spec.genre} icon="♫" />
                 <Spec label="BPM" value={String(result.spec.bpm)} icon="♪" />
+                <Spec label="Length" value={formatLoopLength(result.spec.bpm, result.spec.bars)} icon="⏱" />
                 <Spec label="Key" value={`${result.spec.key} ${result.spec.scale}`} icon="🎹" />
                 <Spec label="Mood" value={result.spec.mood} icon="☺" />
-                <Spec label="Loot" value={result.spec.instruments.join(", ")} icon="✿" wide />
+                <Spec label="Tracks" value={result.spec.instruments.join(", ")} icon="✿" wide />
               </div>
 
               <div className="downloads">
-                <h3>◆ Treasure (MIDI)</h3>
-                <ul>
-                  {Object.entries(result.track_paths).map(([name, path]) => (
-                    <li key={name}>
-                      <a href={`/api/download/${path}`} download className="loot-link">
-                        {name}.mid
-                      </a>
-                    </li>
-                  ))}
-                  <li>
-                    <a href={`/api/download/${result.midi_path}`} download className="loot-link special">
-                      ★ beat_combined.mid
-                    </a>
-                  </li>
-                </ul>
+                <h3>{hostedMode ? "◆ Download again" : "◆ Your beat (all instruments)"}</h3>
+                <button
+                  type="button"
+                  className="loot-link special loot-button"
+                  onClick={() => downloadMidiFile(result.midi_path, "beat_combined.mid")}
+                >
+                  ★ Download beat_combined.mid
+                </button>
               </div>
 
-              <p className="hint">{logicHint(result.spec.genre, result.spec.bpm, result.spec.bars)}</p>
+              <p className="hint">
+                {hostedMode
+                  ? dawHint(result.spec.bpm, result.spec.bars)
+                  : logicHint(result.spec.genre, result.spec.bpm, result.spec.bars)}
+              </p>
             </section>
           )}
         </main>
+
+        <section className="about-panel pixel-box" aria-labelledby="about-heading">
+          <h2 id="about-heading" className="about-title">
+            <PixelHeart /> Why Bloom Beats?
+          </h2>
+          <p>
+            I made this because I love music — writing songs, lyrics, and melodies is one of my
+            favorite things. But I always got stuck on <strong>beats</strong>. Bloom Beats is my way
+            to get unstuck: describe a vibe, get about <strong>two minutes</strong> of loopable MIDI
+            (drums, bass, and keys together), and brainstorm vocals in Logic, GarageBand, or any DAW
+            you like.
+          </p>
+          <p className="about-sign">— Ashlyn ✿</p>
+        </section>
 
         <footer className="game-footer">
           <span>made with pixels & petals</span>
@@ -223,6 +267,20 @@ const GENRE_LOGIC_HINTS: Record<string, string> = {
   house: "Drums → Drum Machine Designer. Bass → Studio Bass. Synth → Retro Synth.",
   pop: "Drums → Drum Kit Designer. Bass → Studio Bass. Keys → Vintage Electric Piano.",
 };
+
+function formatLoopLength(bpm: number, bars: number): string {
+  const seconds = Math.round((bars * 240) / bpm);
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return m > 0 ? `${m}:${s.toString().padStart(2, "0")}` : `${s}s`;
+}
+
+function dawHint(bpm: number, bars: number) {
+  return (
+    `In your DAW: import beat_combined.mid, set project tempo to ${bpm} BPM, ` +
+    `enable loop/cycle over bars 1–${bars}, assign drum/bass/synth sounds, then record vocals.`
+  );
+}
 
 function logicHint(genre: string, bpm: number, bars: number) {
   const stack = GENRE_LOGIC_HINTS[genre] ?? "Load Logic stock plugins per track name.";

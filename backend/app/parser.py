@@ -88,10 +88,18 @@ def parse_prompt_rule_based(prompt: str, bars: int = 8) -> BeatSpec:
     )
 
 
-def parse_prompt_with_llm(prompt: str, bars: int = 8) -> Optional[BeatSpec]:
+def parse_prompt_with_llm(
+    prompt: str,
+    bars: int = 8,
+    web_context: str | None = None,
+) -> Optional[BeatSpec]:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         return None
+
+    user_content = f"Prompt: {prompt}\nDefault bars if unspecified: {bars}"
+    if web_context:
+        user_content += f"\n\nWeb research (use for BPM/genre/mood when the prompt is vague):\n{web_context}"
 
     try:
         from openai import OpenAI
@@ -111,7 +119,7 @@ def parse_prompt_with_llm(prompt: str, bars: int = 8) -> Optional[BeatSpec]:
                         "kick, snare, hihat, bass, synth, perc), bars (int 4-32), mood (smooth|energetic|chill)."
                     ),
                 },
-                {"role": "user", "content": f"Prompt: {prompt}\nDefault bars if unspecified: {bars}"},
+                {"role": "user", "content": user_content},
             ],
         )
         data = json.loads(response.choices[0].message.content or "{}")

@@ -34,8 +34,23 @@ class TimingContext:
         )
 
 
+TARGET_LOOP_SECONDS = 120.0  # ~2 minute brainstorming loop
+
+
 def total_beats(bars: int) -> float:
     return bars * 4.0
+
+
+def bars_for_duration(bpm: int, seconds: float = TARGET_LOOP_SECONDS) -> int:
+    """4/4 loop length: seconds = bars × 4 × (60 / bpm)."""
+    if bpm < 1:
+        bpm = 120
+    bars = round(seconds * bpm / 240.0)
+    return max(16, min(128, bars))
+
+
+def loop_duration_seconds(bpm: int, bars: int) -> float:
+    return bars * 240.0 / max(bpm, 1)
 
 
 def quantize_beat(beat: float, tpq: int = 480, grid: int = GRID_TICKS) -> float:

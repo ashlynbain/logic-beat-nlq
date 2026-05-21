@@ -1,4 +1,8 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field, model_validator
+
+from .client_keys import ClientApiKeys
 
 
 class BeatRequest(BaseModel):
@@ -6,6 +10,14 @@ class BeatRequest(BaseModel):
     bars: int = Field(default=8, ge=4, le=32)
     open_in_logic: bool = Field(default=True)
     lucky: bool = Field(default=False, description="Roll a random genre, BPM, and mood")
+    use_web_search: bool = Field(
+        default=False,
+        description="Use Tavily web search to enrich prompt interpretation",
+    )
+    client_keys: Optional[ClientApiKeys] = Field(
+        default=None,
+        description="Ephemeral API keys from the UI — never stored server-side",
+    )
 
     @model_validator(mode="after")
     def require_prompt_unless_lucky(self) -> "BeatRequest":
@@ -20,7 +32,7 @@ class BeatSpec(BaseModel):
     key: str = "A"
     scale: str = "minor"
     instruments: list[str] = Field(default_factory=lambda: ["kick", "snare", "hihat", "bass", "synth"])
-    bars: int = 8
+    bars: int = 32
     mood: str = "smooth"
     variation: int = 0  # hash of prompt — picks drum/progression variants
 

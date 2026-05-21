@@ -8,7 +8,6 @@ from .genre_profiles import PROFILES
 
 _KEYS = ("C", "D", "E", "F", "G", "A", "B")
 _MOODS = ("chill", "smooth", "energetic", "dreamy", "moody")
-_BARS = (4, 8, 16)
 
 _GENRE_PHRASES: dict[str, list[str]] = {
     "lofi": [
@@ -73,6 +72,3 @@ def roll_lucky_quest() -> tuple[str, int]:
     variation = secrets.randbelow(2**32)
     return prompt, variation
 
-
-def roll_lucky_bars() -> int:
-    return secrets.choice(_BARS)

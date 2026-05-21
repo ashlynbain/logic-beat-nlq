@@ -1,3 +1,12 @@
+export type LlmProvider = "openai" | "anthropic" | "google";
+
+export interface ClientApiKeys {
+  llm_provider?: LlmProvider | null;
+  llm_api_key?: string | null;
+  llm_model?: string | null;
+  tavily_api_key?: string | null;
+}
+
 export interface BeatSpec {
   genre: string;
   bpm: number;
@@ -15,4 +24,13 @@ export interface BeatResponse {
   message: string;
   adjustments: string[];
   original_prompt: string;
+}
+
+export interface HealthResponse {
+  status: string;
+  parsing?: {
+    default?: string;
+    openai_configured?: boolean;
+    tavily_configured?: boolean;
+  };
 }

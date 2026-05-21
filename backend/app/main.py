@@ -1,3 +1,4 @@
+import os
 import shutil
 import uuid
 from pathlib import Path
@@ -9,10 +10,11 @@ from fastapi.staticfiles import StaticFiles
 
 from .beat_engine import generate_beat
 from .logic_bridge import open_in_logic
-from .lucky import roll_lucky_bars, roll_lucky_quest
+from .loop_length import apply_target_loop_length
+from .lucky import roll_lucky_quest
 from .models import BeatRequest, BeatResponse
-from .parser import parse_prompt_with_llm
 from .prompt_normalize import normalize_prompt
+from .prompt_resolve import resolve_beat_spec
 
 APP_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = APP_DIR.parent.parent
@@ -21,9 +23,21 @@ FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
 
 app = FastAPI(title="Logic Beat NLQ", version="0.2.0")
 
+def _cors_origins() -> list[str]:
+    raw = os.getenv("ALLOWED_ORIGINS", "")
+    if raw.strip():
+        return [o.strip() for o in raw.split(",") if o.strip()]
+    return [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8000"],
+    allow_origins=_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,7 +46,15 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "parsing": {
+            "default": "rule_based_keywords",
+            "openai_configured": bool(os.getenv("OPENAI_API_KEY")),
+            "openai_model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            "tavily_configured": bool(os.getenv("TAVILY_API_KEY")),
+        },
+    }
 
 
 @app.post("/api/generate", response_model=BeatResponse)
@@ -42,26 +64,24 @@ def generate(request: BeatRequest):
 
     if request.lucky:
         prompt, lucky_variation = roll_lucky_quest()
-        bars = roll_lucky_bars()
-        spec, adjustments = normalize_prompt(prompt, bars)
-        spec.bars = bars
+        spec, adjustments = normalize_prompt(prompt, request.bars)
         spec.variation = lucky_variation
         adjustments.insert(
             0,
-            f"Lucky roll — {spec.genre} at {spec.bpm} BPM, {spec.key} {spec.scale}, {spec.mood} mood ({bars} bars).",
+            f"Lucky roll — {spec.genre} at {spec.bpm} BPM, {spec.key} {spec.scale}, {spec.mood} mood.",
         )
     else:
-        spec, adjustments = normalize_prompt(prompt, bars)
-        spec.bars = bars
+        use_web = request.use_web_search or (
+            request.client_keys is not None and request.client_keys.tavily_configured()
+        ) or bool(os.getenv("TAVILY_API_KEY"))
+        spec, adjustments, _web = resolve_beat_spec(
+            prompt,
+            request.bars,
+            use_web_search=use_web,
+            client_keys=request.client_keys,
+        )
 
-        llm_spec = parse_prompt_with_llm(prompt, bars)
-        if llm_spec:
-            spec = llm_spec
-            spec.bars = bars
-        if spec.variation == 0:
-            import zlib
-
-            spec.variation = zlib.adler32(prompt.lower().encode()) & 0xFFFFFFFF
+    apply_target_loop_length(spec, adjustments)
 
     session_id = uuid.uuid4().hex[:12]
     session_dir = OUTPUT_ROOT / session_id
@@ -79,7 +99,11 @@ def generate(request: BeatRequest):
         spec=spec,
         midi_path=str(combined_path.relative_to(PROJECT_ROOT)),
         track_paths={k: str(v.relative_to(PROJECT_ROOT)) for k, v in track_paths.items()},
-        message=logic_message or "Beat generated. Open LOGIC_SETUP.txt in the output folder for instrument mapping.",
+        message=logic_message
+        or (
+            "Beat generated. Download beat_combined.mid and open in any DAW "
+            "(Logic, GarageBand, FL Studio, etc.)."
+        ),
         adjustments=adjustments,
         original_prompt=prompt,
     )

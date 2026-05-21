@@ -11,7 +11,6 @@ from .midi_timing import (
     TimingContext,
     build_combined_file,
     quantize_beat,
-    save_type0,
     total_beats,
     encode_drum_track,
     encode_melodic_track,
@@ -155,41 +154,27 @@ def generate_beat(spec: BeatSpec, output_dir: Path) -> tuple[Path, dict[str, Pat
     if "synth" in spec.instruments:
         key_events = _keys_from_progression(spec, profile, progression)
 
-    # 3) Encode MIDI tracks from the same TimingContext
+    # 3) Encode MIDI tracks from the same TimingContext (combined file only)
     instrument_midis: list[mido.MidiTrack] = []
-    track_paths: dict[str, Path] = {}
 
     if drum_events:
         drum_cfg = next((t for t in logic_tracks if t.is_drums), None)
         name = drum_cfg.midi_name if drum_cfg else "Drums"
-        drum_track = encode_drum_track(ctx, name, drum_events)
-        instrument_midis.append(drum_track)
-        path = output_dir / "drums.mid"
-        save_type0(ctx, drum_track, path)
-        track_paths["drums"] = path
+        instrument_midis.append(encode_drum_track(ctx, name, drum_events))
 
     if bass_events:
         bass_cfg = next((t for t in logic_tracks if t.midi_name in ("Bass", "808 Bass")), None)
         name = bass_cfg.midi_name if bass_cfg else "Bass"
         ch = bass_cfg.channel if bass_cfg else 0
-        bass_track = encode_melodic_track(ctx, name, ch, bass_events)
-        instrument_midis.append(bass_track)
-        path = output_dir / "bass.mid"
-        save_type0(ctx, bass_track, path)
-        track_paths["bass"] = path
+        instrument_midis.append(encode_melodic_track(ctx, name, ch, bass_events))
 
     if key_events:
         keys_cfg = next((t for t in logic_tracks if t.midi_name in ("Keys", "Synth", "Pads")), None)
         name = keys_cfg.midi_name if keys_cfg else "Keys"
         ch = keys_cfg.channel if keys_cfg else 1
-        keys_track = encode_melodic_track(ctx, name, ch, key_events)
-        instrument_midis.append(keys_track)
-        path = output_dir / "keys.mid"
-        save_type0(ctx, keys_track, path)
-        track_paths["keys"] = path
+        instrument_midis.append(encode_melodic_track(ctx, name, ch, key_events))
 
-    # 4) Combined file last — same tracks, same BPM on every lane
     combined_path = output_dir / "beat_combined.mid"
     build_combined_file(ctx, instrument_midis).save(combined_path)
 
-    return combined_path, track_paths
+    return combined_path, {}
