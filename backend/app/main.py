@@ -30,8 +30,12 @@ def _cors_origins() -> list[str]:
     return [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost:4173",
+        "http://127.0.0.1:4173",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
+        "https://bloombeats.ashlynbain.com",
+        "http://bloombeats.ashlynbain.com",
     ]
 
 

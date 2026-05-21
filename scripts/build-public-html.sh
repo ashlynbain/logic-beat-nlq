@@ -13,6 +13,7 @@ mkdir -p "$OUT"
 cp -R dist/* "$OUT/"
 cp "$ROOT/deploy/htaccess.template" "$OUT/.htaccess"
 cp "$ROOT/frontend/public/config.json" "$OUT/config.json"
+cp "$ROOT/frontend/public/config.example.json" "$OUT/config.example.json"
 
 echo ""
 echo "Ready to upload: $OUT"

@@ -40,3 +40,11 @@ export function apiUrl(path: string): string {
   const p = path.startsWith("/") ? path : `/${path}`;
   return `${apiBase}${p}`;
 }
+
+export function apiConfigHint(): string {
+  if (apiBase) return `API: ${apiBase}`;
+  if (import.meta.env.VITE_AUTO_DOWNLOAD === "true") {
+    return "Set apiBaseUrl in config.json to your Python API URL (static hosting has no /api routes).";
+  }
+  return "Start the backend on port 8000 (uvicorn app.main:app --reload --port 8000).";
+}

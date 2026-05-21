@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiUrl, isHostedMode, loadRuntimeConfig } from "./api";
+import { apiConfigHint, apiUrl, getApiBase, isHostedMode, loadRuntimeConfig } from "./api";
 import { downloadMidiFile } from "./download";
 import { ApiKeysPanel, buildClientKeysPayload, type ApiKeysState } from "./components/ApiKeysPanel";
 import { MeadowScene, PixelFlower, PixelHeart } from "./components/PixelDecor";
@@ -24,13 +24,20 @@ export default function App() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const [result, setResult] = useState<BeatResponse | null>(null);
 
   useEffect(() => {
-    loadRuntimeConfig().then(() => {
+    loadRuntimeConfig().then(async () => {
       const hosted = isHostedMode();
       setHostedMode(hosted);
       if (hosted) setOpenInLogic(false);
+      try {
+        const res = await fetch(apiUrl("/api/health"));
+        setApiOnline(res.ok);
+      } catch {
+        setApiOnline(false);
+      }
     });
   }, []);
 
@@ -56,12 +63,15 @@ export default function App() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         const detail = body.detail;
-        const message =
+        let message =
           typeof detail === "string"
             ? detail
             : Array.isArray(detail)
               ? detail.map((d: { msg?: string }) => d.msg).join(", ")
               : `Request failed (${res.status})`;
+        if (res.status === 404) {
+          message = `${message}. ${apiConfigHint()}`;
+        }
         throw new Error(message);
       }
 
@@ -127,6 +137,22 @@ export default function App() {
           />
 
           <ApiKeysPanel keys={apiKeys} onChange={setApiKeys} />
+
+          {apiOnline === false && (
+            <div className="alert error pixel-inset api-offline" role="alert">
+              <span className="alert-icon">!</span>
+              <span>
+                Cannot reach the beat API ({apiUrl("/api/health")}). {apiConfigHint()}
+                {hostedMode && !getApiBase() && (
+                  <>
+                    {" "}
+                    On your server, edit <strong>config.json</strong> and set{" "}
+                    <strong>apiBaseUrl</strong> to your running Python API.
+                  </>
+                )}
+              </span>
+            </div>
+          )}
 
           <p className="chip-label">✦ Quick spells</p>
           <div className="chips">

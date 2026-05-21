@@ -39,13 +39,20 @@ Open **http://127.0.0.1:5173** or run `./scripts/dev.sh` from the project root.
 ./scripts/build-public-html.sh
 ```
 
-Upload `deploy/public_html/` to your web host. Set `config.json`:
+Upload `deploy/public_html/` to your web host. **Required:** edit `config.json` on the server (see `config.example.json`):
 
 ```json
 { "apiBaseUrl": "https://your-api-server.com" }
 ```
 
-On the API server: `export ALLOWED_ORIGINS=https://yourdomain.com`
+Without `apiBaseUrl`, the static site returns **404** on `/api/generate` — the Python API must run elsewhere.
+
+On the API server:
+
+```bash
+export ALLOWED_ORIGINS=https://bloombeats.ashlynbain.com,https://yourdomain.com
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
 
 Hosted builds auto-download `beat_combined.mid`. Run the backend on a VPS or your Mac with Python 3.10+.
 
