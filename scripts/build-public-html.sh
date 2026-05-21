@@ -16,4 +16,4 @@ cp "$ROOT/frontend/public/config.json" "$OUT/config.json"
 
 echo ""
 echo "Ready to upload: $OUT"
-echo "Edit config.json on the server to set apiBaseUrl to your Python API."
+echo "Set apiBaseUrl in config.json to your API URL before upload."
