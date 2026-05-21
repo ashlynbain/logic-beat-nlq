@@ -146,8 +146,8 @@ export default function App() {
                 {window.location.hostname === "bloombeats.ashlynbain.com" && (
                   <>
                     {" "}
-                    Deploy the API at <strong>https://api.bloombeats.ashlynbain.com</strong>{" "}
-                    (see README on GitHub).
+                    Set <strong>config.json</strong> to{" "}
+                    <strong>https://logic-beat-nlq.onrender.com</strong> if beats fail.
                   </>
                 )}
               </span>

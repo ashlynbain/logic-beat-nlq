@@ -23,7 +23,7 @@ export function isHostedMode(): boolean {
 }
 
 const PRODUCTION_SITE = "bloombeats.ashlynbain.com";
-const PRODUCTION_API = "https://api.bloombeats.ashlynbain.com";
+const PRODUCTION_API = "https://logic-beat-nlq.onrender.com";
 
 export async function loadRuntimeConfig(): Promise<void> {
   try {

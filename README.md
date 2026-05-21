@@ -38,12 +38,12 @@ Open **http://127.0.0.1:5173** or run `./scripts/dev.sh` from the project root.
 | URL | Role |
 |-----|------|
 | **https://bloombeats.ashlynbain.com** | Static UI (`public_html`) |
-| **https://api.bloombeats.ashlynbain.com** | Python API (FastAPI) |
+| **https://logic-beat-nlq.onrender.com** | Python API (FastAPI on Render) |
 
-The UI defaults to the API subdomain when hosted on `bloombeats.ashlynbain.com`. You can override with `config.json`:
+The UI uses that API when hosted on `bloombeats.ashlynbain.com`. Override in `config.json` if needed:
 
 ```json
-{ "apiBaseUrl": "https://api.bloombeats.ashlynbain.com" }
+{ "apiBaseUrl": "https://logic-beat-nlq.onrender.com" }
 ```
 
 **1. UI (cPanel `public_html`)** — build and upload:
@@ -67,9 +67,7 @@ If you see **`No module named 'app'`**, the start command ran from the wrong fol
 - **Build:** `pip install -r backend/requirements.txt`
 - **Start:** `bash start-render.sh`
 
-Point **api.bloombeats.ashlynbain.com** at that server (DNS A record or reverse proxy). Test: `https://api.bloombeats.ashlynbain.com/api/health` should return `{"status":"ok"}`.
-
-Until the API subdomain is live, the site will show an offline warning (not a silent 404).
+Live API health check: `https://logic-beat-nlq.onrender.com/api/health`
 
 ## Using the MIDI
 
