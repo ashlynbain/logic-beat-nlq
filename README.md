@@ -53,13 +53,21 @@ The UI defaults to the API subdomain when hosted on `bloombeats.ashlynbain.com`.
 # upload deploy/public_html/* to bloombeats.ashlynbain.com
 ```
 
-**2. API** — run on a host that supports Python (VPS, Railway, Render, or a `api.` subdomain with Python):
+**2. API on Render** — use the repo’s `render.yaml`, or set manually:
 
-```bash
-cd backend && source .venv/bin/activate && pip install -r requirements.txt
-export ALLOWED_ORIGINS=https://bloombeats.ashlynbain.com
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
+| Render setting | Value |
+|----------------|--------|
+| **Root Directory** | `backend` |
+| **Build Command** | `pip install -r requirements.txt` |
+| **Start Command** | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| **ALLOWED_ORIGINS** | `https://bloombeats.ashlynbain.com` |
+
+`requirements.txt` lives in **`backend/`** — if Root Directory is blank, Render will say requirements are missing.
+
+Or from repo root without `rootDir`:
+
+- **Build:** `pip install -r backend/requirements.txt`
+- **Start:** `cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
 Point **api.bloombeats.ashlynbain.com** at that server (DNS A record or reverse proxy). Test: `https://api.bloombeats.ashlynbain.com/api/health` should return `{"status":"ok"}`.
 
