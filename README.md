@@ -59,15 +59,13 @@ The UI defaults to the API subdomain when hosted on `bloombeats.ashlynbain.com`.
 |----------------|--------|
 | **Root Directory** | `backend` |
 | **Build Command** | `pip install -r requirements.txt` |
-| **Start Command** | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| **Start Command** | `bash start.sh` |
 | **ALLOWED_ORIGINS** | `https://bloombeats.ashlynbain.com` |
 
-`requirements.txt` lives in **`backend/`** — if Root Directory is blank, Render will say requirements are missing.
-
-Or from repo root without `rootDir`:
+If you see **`No module named 'app'`**, the start command ran from the wrong folder. Use **`bash start.sh`** with Root Directory **`backend`**, or from repo root:
 
 - **Build:** `pip install -r backend/requirements.txt`
-- **Start:** `cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+- **Start:** `bash start-render.sh`
 
 Point **api.bloombeats.ashlynbain.com** at that server (DNS A record or reverse proxy). Test: `https://api.bloombeats.ashlynbain.com/api/health` should return `{"status":"ok"}`.
 
